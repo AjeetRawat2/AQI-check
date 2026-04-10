@@ -3,249 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air Quality Monitoring Dashboard</title>
+    <title>Hybrid IoT Air Quality Dashboard</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for data visualization -->
+    <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); padding: 1.5rem; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
-    </style>
 </head>
-<body class="text-slate-800">
+<body class="bg-gray-100 p-6">
 
-    <!-- Navigation -->
-    <nav class="bg-indigo-600 text-white p-4 shadow-md">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="wind" class="h-6 w-6"></i>
-                <span class="text-xl font-bold tracking-wide">AQI Monitor Pro</span>
-            </div>
-            <div class="text-sm font-medium opacity-80" id="last-updated">Last updated: --</div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto p-6 space-y-6">
-        
-        <!-- Top Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            <!-- External API Card -->
-            <div class="card border-l-4 border-blue-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">External API (City Data)</p>
-                        <h3 class="text-3xl font-bold mt-1" id="ext-aqi">--</h3>
-                        <p class="text-xs text-slate-400 mt-1" id="ext-city">Fetching...</p>
-                    </div>
-                    <div class="p-2 bg-blue-50 rounded-lg text-blue-500">
-                        <i data-lucide="globe"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Local Sensor Card -->
-            <div class="card border-l-4 border-indigo-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Local Sensor AQI</p>
-                        <h3 class="text-3xl font-bold mt-1" id="sens-aqi">--</h3>
-                        <p class="text-xs text-slate-400 mt-1">Live from device</p>
-                    </div>
-                    <div class="p-2 bg-indigo-50 rounded-lg text-indigo-500">
-                        <i data-lucide="cpu"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PM 2.5 Card -->
-            <div class="card border-l-4 border-rose-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">PM 2.5 (Sensor)</p>
-                        <h3 class="text-3xl font-bold mt-1"><span id="sens-pm25">--</span> <span class="text-sm font-normal text-slate-400">µg/m³</span></h3>
-                    </div>
-                    <div class="p-2 bg-rose-50 rounded-lg text-rose-500">
-                        <i data-lucide="cloud-fog"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Temperature Card -->
-            <div class="card border-l-4 border-amber-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Temperature</p>
-                        <h3 class="text-3xl font-bold mt-1"><span id="sens-temp">--</span><span class="text-sm font-normal text-slate-400">°C</span></h3>
-                    </div>
-                    <div class="p-2 bg-amber-50 rounded-lg text-amber-500">
-                        <i data-lucide="thermometer"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="card lg:col-span-2">
-                <h2 class="text-lg font-semibold mb-4 text-slate-700">Sensor AQI Trend (Last 50 Readings)</h2>
-                <div class="relative h-72 w-full">
-                    <canvas id="aqiChart"></canvas>
-                </div>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-white p-6 rounded-lg shadow-md mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">☁️ Air Quality Monitor</h1>
+                <p class="text-gray-500 text-sm mt-1">Accepting real ESP32 data & software simulations</p>
             </div>
             
-            <div class="card lg:col-span-1">
-                <h2 class="text-lg font-semibold mb-4 text-slate-700">Health Advice</h2>
-                <div class="flex flex-col space-y-4">
-                    <div class="p-4 rounded-lg bg-slate-50 border border-slate-100 flex items-center space-x-4">
-                        <div id="status-icon" class="h-10 w-10 rounded-full flex items-center justify-center text-white bg-gray-400">
-                            <i data-lucide="activity"></i>
+            <div class="flex items-center space-x-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Location Node</label>
+                    <select id="locationSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        {% for loc in locations %}
+                            <option value="{{ loc }}">{{ loc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- SIMULATION TOGGLE -->
+                <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                    <label class="flex items-center cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" id="simToggle" class="sr-only">
+                            <div class="block bg-gray-300 w-10 h-6 rounded-full shadow-inner toggle-bg"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition toggle-dot"></div>
                         </div>
-                        <div>
-                            <p class="font-semibold text-slate-800" id="status-title">Awaiting Data</p>
-                            <p class="text-sm text-slate-500" id="status-desc">Connecting to sensors...</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <h3 class="text-sm font-semibold text-slate-600 mb-2">Simulate Sensor Push</h3>
-                        <button onclick="simulateSensorPost()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-md text-sm font-medium transition-colors">
-                            Push Mock Data to API
-                        </button>
-                        <p class="text-xs text-slate-400 mt-2 text-center">Simulates hardware sending a POST request to /api/sensor</p>
-                    </div>
+                        <span class="ml-3 text-sm font-semibold text-blue-800">Enable Simulator</span>
+                    </label>
                 </div>
             </div>
         </div>
 
-    </main>
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                <h3 class="text-gray-500 text-sm font-semibold">Latest AQI</h3>
+                <p id="kpi-aqi" class="text-4xl font-bold text-gray-800 mt-2">--</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                <h3 class="text-gray-500 text-sm font-semibold">PM2.5 (µg/m³)</h3>
+                <p id="kpi-pm25" class="text-4xl font-bold text-gray-800 mt-2">--</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+                <h3 class="text-gray-500 text-sm font-semibold">PM10 (µg/m³)</h3>
+                <p id="kpi-pm10" class="text-4xl font-bold text-gray-800 mt-2">--</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+                <h3 class="text-gray-500 text-sm font-semibold">Data Source</h3>
+                <p id="kpi-source" class="text-xl font-bold text-gray-800 mt-2">Waiting...</p>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Real-Time AQI Trend</h2>
+            <canvas id="aqiChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <style>
+        /* Custom CSS for the toggle switch */
+        input:checked ~ .toggle-bg { background-color: #3b82f6; }
+        input:checked ~ .dot { transform: translateX(100%); }
+    </style>
 
     <script>
-        // Initialize Icons
-        lucide.createIcons();
-
-        // Chart.js Setup
+        // Setup Chart.js
         const ctx = document.getElementById('aqiChart').getContext('2d');
         const aqiChart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Local Sensor AQI',
-                    data: [],
-                    borderColor: '#4f46e5', // Indigo 600
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            data: { 
+                labels: [], 
+                datasets: [{ 
+                    label: 'Air Quality Index', 
+                    data: [], 
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.4
-                }]
+                    tension: 0.3
+                }] 
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, suggestedMax: 200 }
-                }
-            }
+            options: { responsive: true, animation: { duration: 0 } }
         });
 
-        // Function to update the health advice based on AQI
-        function updateHealthAdvice(aqi) {
-            const icon = document.getElementById('status-icon');
-            const title = document.getElementById('status-title');
-            const desc = document.getElementById('status-desc');
+        // Function to update the dashboard
+        async function updateDashboard() {
+            const location = document.getElementById('locationSelect').value;
+            const isSimulating = document.getElementById('simToggle').checked;
 
-            if (aqi <= 50) {
-                icon.className = 'h-10 w-10 rounded-full flex items-center justify-center text-white bg-green-500';
-                title.innerText = 'Good';
-                desc.innerText = 'Air quality is satisfactory.';
-            } else if (aqi <= 100) {
-                icon.className = 'h-10 w-10 rounded-full flex items-center justify-center text-white bg-yellow-500';
-                title.innerText = 'Moderate';
-                desc.innerText = 'Acceptable air quality.';
-            } else if (aqi <= 150) {
-                icon.className = 'h-10 w-10 rounded-full flex items-center justify-center text-white bg-orange-500';
-                title.innerText = 'Unhealthy for Sensitive Groups';
-                desc.innerText = 'General public is not likely to be affected.';
-            } else {
-                icon.className = 'h-10 w-10 rounded-full flex items-center justify-center text-white bg-red-500';
-                title.innerText = 'Unhealthy';
-                desc.innerText = 'Everyone may begin to experience health effects.';
+            // 1. If simulation is ON, tell the backend to generate fake data first
+            if (isSimulating) {
+                await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ location: location })
+                });
             }
-        }
 
-        // Fetch Data from APIs
-        async function fetchDashboardData() {
-            try {
-                // 1. Fetch External API Data
-                const extRes = await fetch('/api/external-aqi?city=London');
-                const extData = await extRes.json();
-                if (extData.status === 'success') {
-                    document.getElementById('ext-aqi').innerText = extData.data.aqi;
-                    document.getElementById('ext-city').innerText = `${extData.data.city} (${extData.source})`;
-                }
+            // 2. Fetch the latest data for the charts and KPIs
+            const response = await fetch(`/api/data/${location}`);
+            const data = await response.json();
 
-                // 2. Fetch Sensor Data
-                const sensRes = await fetch('/api/sensor');
-                const sensData = await sensRes.json();
+            // Update Chart
+            aqiChart.data.labels = data.timestamps;
+            aqiChart.data.datasets[0].data = data.aqi;
+            aqiChart.update();
+
+            // Update KPIs
+            if (data.latest) {
+                document.getElementById('kpi-aqi').innerText = data.latest.aqi;
+                document.getElementById('kpi-pm25').innerText = data.latest.pm25;
+                document.getElementById('kpi-pm10').innerText = data.latest.pm10;
                 
-                if (sensData.status === 'success' && sensData.data.length > 0) {
-                    const latest = sensData.latest;
-                    
-                    // Update Cards
-                    document.getElementById('sens-aqi').innerText = latest.aqi;
-                    document.getElementById('sens-pm25').innerText = latest.pm25;
-                    document.getElementById('sens-temp').innerText = latest.temp;
-                    
-                    // Update Health Advice
-                    updateHealthAdvice(latest.aqi);
-
-                    // Update Chart
-                    const labels = sensData.data.map(d => d.timestamp);
-                    const aqiValues = sensData.data.map(d => d.aqi);
-                    
-                    aqiChart.data.labels = labels;
-                    aqiChart.data.datasets[0].data = aqiValues;
-                    aqiChart.update();
-                }
-
-                // Update timestamp
-                const now = new Date();
-                document.getElementById('last-updated').innerText = `Last updated: ${now.toLocaleTimeString()}`;
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
+                const sourceEl = document.getElementById('kpi-source');
+                sourceEl.innerText = data.latest.source;
+                sourceEl.className = data.latest.source === 'Simulated' ? 'text-xl font-bold text-blue-600 mt-2' : 'text-xl font-bold text-green-600 mt-2';
             }
         }
 
-        // Function to simulate physical sensor pushing data via POST
-        async function simulateSensorPost() {
-            const mockData = {
-                aqi: Math.floor(Math.random() * (180 - 40 + 1) + 40), // Random AQI 40-180
-                pm25: Math.floor(Math.random() * (90 - 10 + 1) + 10),
-                temp: (Math.random() * (30 - 20) + 20).toFixed(1)
-            };
-
-            await fetch('/api/sensor', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(mockData)
-            });
-            
-            // Refresh dashboard immediately after push
-            fetchDashboardData();
-        }
-
-        // Initial fetch and set polling every 30 seconds
-        fetchDashboardData();
-        setInterval(fetchDashboardData, 30000);
-
+        // Run the update loop every 3 seconds
+        setInterval(updateDashboard, 3000);
+        
+        // Initial load
+        updateDashboard();
     </script>
 </body>
 </html>
